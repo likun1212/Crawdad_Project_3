@@ -95,6 +95,36 @@ int main()
 //Reading the two electron integrals 
 /**************************************************************/	
 
+//here we have to store the 4D matrix involving the 2 electron integrals
+//into a one dimensional matrix
+	arma::mat d_file;
+	d_file.load("eri.dat");
+	arma::vec d_I =arma::zeros();	
+	for(int i1=0; i1<d_file.n_rows; i1++)
+	{
+		int i=d_file(i1,0);
+		int j=d_file(i1,1);
+		int k=d_file(i1,2); 
+		int l=d_file(i1,3);
+		int ij=i*10+j;
+		int kl=k*10=l;
+		double val=d_file(i1,4);
+		int ijkl=0;
+		if(ij > kl)
+		{
+			 ijkl=ij*(ij+1)/2+(kl);
+		}
+		else 
+		{
+			 ijkl=kl*(kl+1)/2+(ij);
+		}
+		d_I(ijkl)=val;
+	}	
+	//d_I.print("\nThe 2 electron  intergral elements are\n ");
+	for(int i=0; i<d_I.n_rows; i++)
+	{
+		cout<<i<<" "<<d_I(i)<<endl;
+	}
 
 
 
