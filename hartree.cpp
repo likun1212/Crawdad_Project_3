@@ -92,7 +92,7 @@ int main()
 	V.print("\nThe nuclear attaraction intergral elements are\n ");
 
 	arma::mat H_c=T+V;
-	H_c.print("\nThis is the core Hamiltonian\n");
+	real(H_c).print("\nThis is the core Hamiltonian\n");
 
 /**************************************************************/	
 //Reading the two electron integrals 
@@ -152,17 +152,18 @@ int main()
 	arma::cx_vec eigval;
 	arma::cx_mat eigvec;
 	arma::eig_gen (eigval,eigvec,S);
-	eigvec.print("\nPrinting the eigenvectors of the overlap matrix\n");
-	eigval.print("\nPrinting the eigenvalues of the overlap matrix\n");
+	real(eigvec).print("\nPrinting the eigenvectors of the overlap matrix\n");
+	real(eigval).print("\nPrinting the eigenvalues of the overlap matrix\n");
 	arma::cx_mat tran_eigvec=eigvec.t();
 	arma::cx_mat prod=tran_eigvec*eigvec;
-	prod.print("\nThe product of the eigenvec and its transpose\n");
+	real(prod).print("\nThe product of the eigenvec and its transpose\n");
 	arma::cx_mat sqrt_eigen=arma::pow(eigval,-0.5);
-	sqrt_eigen.print("\nThe square root of the eigenvalue matrix\n");
+	real(sqrt_eigen).print("\nThe square root of the eigenvalue matrix\n");
 	arma::cx_mat diag_ee=arma::diagmat(sqrt_eigen);
-	diag_ee.print("\nThe diagonal matrix of the eigenvalues\n");
+	real(diag_ee).print("\nThe diagonal matrix of the eigenvalues\n");
 	arma::cx_mat S_sqrt=eigvec*diag_ee*tran_eigvec;
-	S_sqrt.print("\nThe orthogonalized symmetric overlap matrix\n");
+	arma::mat r_S_sqrt=arma::real(S_sqrt);
+	real(S_sqrt).print("\nThe orthogonalized symmetric overlap matrix\n");
 
 
 /**************************************************************/
@@ -170,18 +171,20 @@ int main()
 /**************************************************************/	
 
 	arma::cx_mat I_Gs=S_sqrt.t()*H_c*S_sqrt;
-	I_Gs.print("\nThis is the initial Fock matrix(orthogonal basis)\n");
+	real(I_Gs).print("\nThis is the initial Fock matrix(orthogonal basis)\n");
 //Note that this contains the inital orbital range
 	arma::cx_vec eig11; 
 	arma::cx_mat eigenvec;
 	arma::eig_gen(eig11,eigenvec,I_Gs);
+	real(eig11).print("\nThe eigenvalues\n");
+	real(eigenvec).print("\nThe eigenvectors\n");
 	//eigvec1.print("\nThe initial MO coefficient Matrix is \n");
 //Transforming the eigenvectors into the original basis
 	arma::cx_mat eig_AO = S_sqrt*eigenvec;
-	eig_AO.print("\nThe initial MO cofficients\n");
+	real(eig_AO).print("\nThe initial MO cofficients\n");
 //The density matrix	
 	arma::cx_mat den_I=eig_AO.t()*eig_AO;
-	den_I.print("\nThe initial guess density matrix\n");
+	real(den_I).print("\nThe initial guess density matrix\n");
 
 
 
