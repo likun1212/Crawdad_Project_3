@@ -19,6 +19,9 @@
 
 #include <array>   // to be able to use this library compile using this g++ -std=c++0x FileNames
 
+
+int index1(int i, int j);
+
 using namespace std;
 
 int main()
@@ -99,53 +102,112 @@ int main()
 //into a one dimensional matrix
 	arma::mat d_file;
 	d_file.load("eri.dat");
-	arma::vec d_I =arma::zeros();	
+	arma::vec d_I =arma::zeros(1000);	
 	for(int i1=0; i1<d_file.n_rows; i1++)
 	{
 		int i=d_file(i1,0);
 		int j=d_file(i1,1);
 		int k=d_file(i1,2); 
 		int l=d_file(i1,3);
-		int ij=i*10+j;
-		int kl=k*10=l;
 		double val=d_file(i1,4);
-		int ijkl=0;
+		int ij, kl,ijkl;
+		if(i>j)
+		{
+			 ij=index1(i,j);
+		}
+		else    
+		{
+			 ij=index1(j,i);
+		}
+		if (k>l)
+		{
+			 kl=index1(k,l);
+		}
+		else
+		{
+			kl=index1(l,k);
+		}
 		if(ij > kl)
 		{
 			 ijkl=ij*(ij+1)/2+(kl);
 		}
-		else 
+		else //if (ij < kl)
+
 		{
 			 ijkl=kl*(kl+1)/2+(ij);
 		}
 		d_I(ijkl)=val;
 	}	
 	//d_I.print("\nThe 2 electron  intergral elements are\n ");
-	for(int i=0; i<d_I.n_rows; i++)
-	{
-		cout<<i<<" "<<d_I(i)<<endl;
-	}
-
-
-
-
+//	for(int i=0; i<d_I.n_rows; i++)
+//	{
+//		cout<<i<<" "<<d_I(i)<<endl;
+//	}
 
 
 /**************************************************************/
 //Building the orthogonalization matrix
 /**************************************************************/	
 
-
-
-
+	arma::cx_vec eigval;
+	arma::cx_mat eigvec;
+	arma::eig_gen (eigval,eigvec,S);
+	eigvec.print("\nPrinting the eigenvectors of the overlap matrix\n");
+	eigval.print("\nPrinting the eigenvalues of the overlap matrix\n");
+	arma::cx_mat tran_eigvec=eigvec.t();
+	arma::cx_mat prod=tran_eigvec*eigvec;
+	prod.print("\nThe product of the eigenvec and its transpose\n");
+	arma::cx_mat sqrt_eigen=arma::pow(eigval,-0.5);
+	sqrt_eigen.print("\nThe square root of the eigenvalue matrix\n");
+	arma::cx_mat diag_ee=arma::diagmat(sqrt_eigen);
+	diag_ee.print("\nThe diagonal matrix of the eigenvalues\n");
+	arma::cx_mat S_sqrt=eigvec*diag_ee*tran_eigvec;
+	S_sqrt.print("\nThe orthogonalized symmetric overlap matrix\n");
 
 
 /**************************************************************/
 //Building the initial guess density matrix 
 /**************************************************************/	
 
+	arma::cx_mat I_Gs=S_sqrt.t()*H_c*S_sqrt;
+	I_Gs.print("\nThis is the initial Fock matrix(orthogonal basis)\n");
+//Note that this contains the inital orbital range
+	arma::cx_vec eig11; 
+	arma::cx_mat eigenvec;
+	arma::eig_gen(eig11,eigenvec,I_Gs);
+	//eigvec1.print("\nThe initial MO coefficient Matrix is \n");
+//Transforming the eigenvectors into the original basis
+	arma::cx_mat eig_AO = S_sqrt*eigenvec;
+	eig_AO.print("\nThe initial MO cofficients\n");
+//The density matrix	
+	arma::cx_mat den_I=eig_AO.t()*eig_AO;
+	den_I.print("\nThe initial guess density matrix\n");
+
+
+
+/**************************************************************/
+//Computing the initial SCF energy matrix 
+/**************************************************************/	
+
+
+}
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+int index1(int i, int j)
+{
+	int ij=i*(i+1)/2+j;
+	return ij;	
 }
