@@ -21,7 +21,7 @@
 
 
 int index1(int i, int j);
-
+int index_call (int i, int j, int k, int l);
 using namespace std;
 
 int main()
@@ -65,7 +65,6 @@ int main()
 	T_file.load("t.dat");
 	int last_t=T_file(T_file.n_rows-1,0);
 	arma::mat T=arma::zeros(last_t,last_t);
-	//cout<<S_file(27,0);
 	for(int i=0; i<T_file.n_rows; i++)
 	{
 		int i1=T_file(i,0);
@@ -80,7 +79,6 @@ int main()
 	V_file.load("v.dat");
 	int last_v=V_file(V_file.n_rows-1,0);
 	arma::mat V=arma::zeros(last_v,last_v);
-	//cout<<S_file(27,0);
 	for(int i=0; i<V_file.n_rows; i++)
 	{
 		int i1=V_file(i,0);
@@ -149,19 +147,19 @@ int main()
 //Building the orthogonalization matrix
 /**************************************************************/	
 
-	arma::cx_vec eigval;
-	arma::cx_mat eigvec;
-	arma::eig_gen (eigval,eigvec,S);
+	arma::vec eigval;
+	arma::mat eigvec;
+	arma::eig_sym (eigval,eigvec,S);
 	real(eigvec).print("\nPrinting the eigenvectors of the overlap matrix\n");
 	real(eigval).print("\nPrinting the eigenvalues of the overlap matrix\n");
-	arma::cx_mat tran_eigvec=eigvec.t();
-	arma::cx_mat prod=tran_eigvec*eigvec;
+	arma::mat tran_eigvec=eigvec.t();
+	arma::mat prod=tran_eigvec*eigvec;
 	real(prod).print("\nThe product of the eigenvec and its transpose\n");
-	arma::cx_mat sqrt_eigen=arma::pow(eigval,-0.5);
+	arma::mat sqrt_eigen=arma::pow(eigval,-0.5);
 	real(sqrt_eigen).print("\nThe square root of the eigenvalue matrix\n");
-	arma::cx_mat diag_ee=arma::diagmat(sqrt_eigen);
+	arma::mat diag_ee=arma::diagmat(sqrt_eigen);
 	real(diag_ee).print("\nThe diagonal matrix of the eigenvalues\n");
-	arma::cx_mat S_sqrt=eigvec*diag_ee*tran_eigvec;
+	arma::mat S_sqrt=eigvec*diag_ee*tran_eigvec;
 	arma::mat r_S_sqrt=arma::real(S_sqrt);
 	real(S_sqrt).print("\nThe orthogonalized symmetric overlap matrix\n");
 
@@ -170,27 +168,56 @@ int main()
 //Building the initial guess density matrix 
 /**************************************************************/	
 
-	arma::cx_mat I_Gs=S_sqrt.t()*H_c*S_sqrt;
-	real(I_Gs).print("\nThis is the initial Fock matrix(orthogonal basis)\n");
+	arma::mat I_Gs=S_sqrt.t()*H_c*S_sqrt;
+	I_Gs.print("\nThis is the initial Fock matrix(orthogonal basis)\n");
 //Note that this contains the inital orbital range
-	arma::cx_vec eig11; 
-	arma::cx_mat eigenvec;
-	arma::eig_gen(eig11,eigenvec,I_Gs);
-	real(eig11).print("\nThe eigenvalues\n");
-	real(eigenvec).print("\nThe eigenvectors\n");
+	arma::vec eig11; 
+	arma::mat eigenvec;
+	arma::eig_sym(eig11,eigenvec,I_Gs);
+	real(eig11).print("\nThe eigenvalues (initially)\n");
+	real(eigenvec).print("\nThe eigenvectors (initially)\n");
 	//eigvec1.print("\nThe initial MO coefficient Matrix is \n");
 //Transforming the eigenvectors into the original basis
-	arma::cx_mat eig_AO = S_sqrt*eigenvec;
+	arma::mat eig_AO = S_sqrt*eigenvec;
 	real(eig_AO).print("\nThe initial MO cofficients\n");
-//The density matrix	
-	arma::cx_mat den_I=eig_AO.t()*eig_AO;
+//The density matrix
+//Since only the first MO of water are occupied so the lowest five 
+//MO are taken into consideration and they are effectively squared.	
+	eig_AO.shed_cols(5,6);
+	arma::mat den_I = eig_AO*eig_AO.t();	
 	real(den_I).print("\nThe initial guess density matrix\n");
 
+/**************************************************************/
+//Computing the initial SCF energy matrix and the Fock Matrix
+/**************************************************************/	
+
+//Computing the SCF electronic energy using the density matrix
+
+	arma::mat F_mv=H_c;
+	for(int i=0;i<H_c.n_rows;i++)
+	{
+		for(int j=0; j<H_c.n_cols; j++)
+		{
+			for(int k=0;k<H_c.n_cols;k++)
+			{
+				for(int l=0;l<H_c.n_cols;l++)
+				{
+					F_mv(i,j)+=den_I(k,l)*(2*d_I(index_call(i+1,j+1,k+1,l+1))-d_I(index_call(i+1,k+1,j+1,l+1)));
+				}
+			}
+		}
+	}
+	F_mv.print("\nThe Fock matrix\n");
+	arma::mat E_elec_I=den_I.t()*(H_c+F_mv);	
+	E_elec_I.print("\nThis is the electronic matrix calculated\n");
+	cout<<arma::sum(arma::sum(E_elec_I,1))<<endl;
 
 
 /**************************************************************/
-//Computing the initial SCF energy matrix 
+//Computing the new Fock Matrix 
 /**************************************************************/	
+
+
 
 
 }
@@ -214,3 +241,44 @@ int index1(int i, int j)
 	int ij=i*(i+1)/2+j;
 	return ij;	
 }
+
+
+int index_call(int i, int j , int k, int l)
+{
+	int ij,kl,ijkl;
+	if(i>j)
+	{
+		 ij=index1(i,j);
+	}
+	else    
+	{
+		 ij=index1(j,i);
+	}
+	if (k>l)
+	{
+		 kl=index1(k,l);
+	}
+	else
+	{
+		kl=index1(l,k);
+	}
+	if(ij > kl)
+	{
+		 ijkl=ij*(ij+1)/2+(kl);
+	}
+	else //if (ij < kl)
+
+	{
+		 ijkl=kl*(kl+1)/2+(ij);
+	}
+
+	return ijkl;
+}
+
+
+
+
+
+
+
+
