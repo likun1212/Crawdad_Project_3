@@ -136,11 +136,6 @@ int main()
 		}
 		d_I(ijkl)=val;
 	}	
-	//d_I.print("\nThe 2 electron  intergral elements are\n ");
-//	for(int i=0; i<d_I.n_rows; i++)
-//	{
-//		cout<<i<<" "<<d_I(i)<<endl;
-//	}
 
 
 /**************************************************************/
@@ -193,46 +188,107 @@ int main()
 
 //Computing the SCF electronic energy using the density matrix
 
-	arma::mat F_mv=H_c;
-	for(int i=0;i<H_c.n_rows;i++)
+	double energy=0.0;
+	for(int i=0; i< H_c.n_rows; i++)
 	{
 		for(int j=0; j<H_c.n_cols; j++)
 		{
-			for(int k=0;k<H_c.n_cols;k++)
+			energy+=den_I(i,j)*(H_c(i,j)+I_Gs(i,j));
+		}
+	}
+	
+	printf("\n %s\t %s\t %s\t %s\t\t %s\n %d %19.5f \n","Iteration", "Electronic energy","E_total","Delta(E)","RMS(D)",0,energy);
+
+/**************************************************************/
+//Computing the new Fock Matrix and starting the SCF loop
+/**************************************************************/	
+	arma::mat density_initial=den_I;
+	double energy_last=energy;
+//setting the precision here
+	cout.precision(15);
+	arma::mat F_mv=H_c;
+        arma::mat coeff_car=den_I;	
+//the SCF loop starts here
+	for(int ii=1; ii<100000; ii++)
+	{	
+		F_mv=H_c;
+		for(int i=0;i<H_c.n_rows;i++)
+		{
+			for(int j=0; j<H_c.n_cols; j++)
 			{
-				for(int l=0;l<H_c.n_cols;l++)
+				for(int k=0;k<H_c.n_cols;k++)
 				{
-					F_mv(i,j)+=den_I(k,l)*(2*d_I(index_call(i+1,j+1,k+1,l+1))-d_I(index_call(i+1,k+1,j+1,l+1)));
+					for(int l=0;l<H_c.n_cols;l++)
+					{
+						F_mv(i,j)+=den_I(k,l)*(2*d_I(index_call(i+1,j+1,k+1,l+1))-d_I(index_call(i+1,k+1,j+1,l+1)));
+					}
 				}
 			}
 		}
-	}
-	F_mv.print("\nThe Fock matrix\n");
-	arma::mat E_elec_I=den_I.t()*(H_c+F_mv);	
-	E_elec_I.print("\nThis is the electronic matrix calculated\n");
-	cout<<arma::sum(arma::sum(E_elec_I,1))<<endl;
-
+		//F_mv.print("\nThe Fock matrix with 2 electron integrals \n");
+		arma::mat F_store=S_sqrt.t()*F_mv*S_sqrt;
+		arma::vec eig_store;
+		arma::mat eigenvec_store;
+		arma::eig_sym(eig_store,eigenvec_store,F_store);
+		arma:: mat eig_AO_store=S_sqrt*eigenvec_store;
+		coeff_car=eig_AO_store;
+		//eig_AO_store.print("\n");
+		eig_AO_store.shed_cols(5,6);
+		arma:: mat density_store=eig_AO_store*eig_AO_store.t();
+		double energy1=0.0;
+		for(int i=0; i< H_c.n_rows; i++)
+		{
+			for(int j=0; j<H_c.n_cols; j++)
+			{
+				energy1+=density_store(i,j)*(H_c(i,j)+F_mv(i,j));
+			}
+		}
+		double enery_last=energy1;
+		double d_ene=energy_last-energy1;
+		double rms=0.0;
+		double rms_last=0.0;
+		for(int i=0; i<density_store.n_rows;i++)
+		{
+			for (int j=0;j<density_store.n_cols;j++)
+			{
+				rms+=pow(density_store(i,j)-density_initial(i,j),2);
+			}
+		}
+		rms=pow(rms,0.5);
+		printf("\n %d\t  %10.12f \t %10.12f \t %10.12f \t %10.12f \n ",ii,energy1,energy-enuc,d_ene,rms);	
+		//F_mv.print("\n");
+		if (abs(d_ene)<1e-12 && abs(rms_last-rms)< 1e-12 )
+			break;
+//Changing the stuff here
+		density_initial=density_store;
+		energy_last=energy1;
+		rms_last=rms;
+		den_I=density_store;
+	}		
+/**************************************************************/
+//The MO-basis Fock-Fatrix
+/**************************************************************/
+	//F_mv.print("\n");
+	//coeff_car.print("\n");	
+	arma:: mat F_MO=arma::zeros(F_mv.n_rows,F_mv.n_cols);
+	//arma:: mat F_MO=coeff_car*coeff_car*F_mv;
+	for(int i=0; i< F_mv.n_rows;i++)
+	{
+		for(int j=0; j<F_mv.n_cols;j++)
+		{
+			for(int k=0; k<F_mv.n_cols;k++)
+			{
+				F_MO(i,j)+=F_mv(k,j)*coeff_car(k,j)*coeff_car(k,i);
+			}
+		}
+	}	
+	F_MO.print("\n");
 
 /**************************************************************/
-//Computing the new Fock Matrix 
-/**************************************************************/	
-
-
-
+//
+/**************************************************************/
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
