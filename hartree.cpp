@@ -270,24 +270,22 @@ int main()
 /**************************************************************/
 	//F_mv.print("\n");
 	//coeff_car.print("\n");	
-	arma:: mat F_MO=arma::zeros(F_mv.n_rows,F_mv.n_cols);
-	//arma:: mat F_MO=coeff_car*coeff_car*F_mv;
-	for(int i=0; i< F_mv.n_rows;i++)
+	arma::mat F_MO2=coeff_car.t()*F_mv*coeff_car;
+	cout<<"\n\nChecking for the Diagonal form of Fork Matrix in the basis of the Molecular Orbitals\n\n";
+
+	for (int i=0; i<F_MO2.n_rows;i++)
 	{
-		for(int j=0; j<F_mv.n_cols;j++)
+		for(int j=0; j<F_MO2.n_cols;j++)
 		{
-			for(int k=0; k<F_mv.n_cols;k++)
-			{
-				F_MO(i,j)+=F_mv(k,j)*coeff_car(k,j)*coeff_car(k,i);
-			}
+			printf("%15.7f",F_MO2(i,j));
 		}
-	}	
-	F_MO.print("\n");
-
-/**************************************************************/
-//
-/**************************************************************/
-
+		cout<<endl;
+	}
+			
+/********************************************************************/
+//One Electron Properties- electronic contribution to dipole operator
+/*********************************************************************/
+	
 }
 
 
