@@ -18,8 +18,7 @@
 #include <complex>
 
 #include <array>   // to be able to use this library compile using this g++ -std=c++0x FileNames
-
-
+void geometry(arma::mat &geom, int &n_atoms, arma::vec &z_val);
 int index1(int i, int j);
 int index_call (int i, int j, int k, int l);
 using namespace std;
@@ -28,11 +27,16 @@ int main()
 {
 
 
-/**************************************************************/	
-//Reading nuclear repulsion energy from the file 
-/**************************************************************/	
+/******************************************************************/	
+//Reading the geometries and nuclear repulsion energy from the file 
+/******************************************************************/	
 
 
+	arma::mat geom;
+	arma::vec z_val;
+	int n_atoms=0;
+	geometry(geom, n_atoms, z_val);
+	geom.print("\nThis is the geometrical coordinates of the molecule\n");
 	double enuc=0.0;
 	ifstream enuc1 ("enuc.dat", ios::in);
 	if (enuc1.is_open())
@@ -255,15 +259,17 @@ int main()
 			}
 		}
 		rms=pow(rms,0.5);
+		den_I=density_store;
 		printf("\n %d\t  %10.12f \t %10.12f \t %10.12f \t %10.12f \n ",ii,energy1,energy-enuc,d_ene,rms);	
 		//F_mv.print("\n");
+		//den_I.print("\nThe density matrix after quitting the loop\n");
 		if (abs(d_ene)<1e-12 && abs(rms_last-rms)< 1e-12 )
 			break;
 //Changing the stuff here
 		density_initial=density_store;
 		energy_last=energy1;
 		rms_last=rms;
-		den_I=density_store;
+		
 	}		
 /**************************************************************/
 //The MO-basis Fock-Fatrix
@@ -285,9 +291,89 @@ int main()
 /********************************************************************/
 //One Electron Properties- electronic contribution to dipole operator
 /*********************************************************************/
+//Reading the files
+	arma::mat mux_file;
+	mux_file.load("mux.dat");
+	arma::mat muy_file;
+	muy_file.load("muy.dat");
+	arma::mat muz_file;
+	muz_file.load("muz.dat");
+//Constructing the matrix (one dimensional based on index)
+	int ele=muz_file(muz_file.n_rows-1,0);
+	arma::mat mux=arma::zeros(ele,ele);
+	arma::mat muy=arma::zeros(ele,ele);
+	arma::mat muz=arma::zeros(ele,ele);
+	for(int i=0; i< mux_file.n_rows;i++)
+	{
+		int x1=mux_file(i,0);
+		int x2=mux_file(i,1);
+		double val_x=mux_file(i,2);
+		mux(x1-1,x2-1)=val_x;
+
+		int y1=muy_file(i,0);
+		int y2=muy_file(i,1);
+		double val_y=muy_file(i,2);
+		muy(y1-1,y2-1)=val_y;
+
+		int z1=muz_file(i,0);
+		int z2=muz_file(i,1);
+		double val_z=muz_file(i,2);
+		muz(z1-1,z2-1)=val_z;
+
+	}
+	mux=symmatl(mux);
+	muy=symmatl(muy);
+	muz=symmatl(muz);
+	mux.print("\nThis is the mu_x integrals\n");
+	muy.print("\nThis is the mu_y integrals\n");
+	muz.print("\nThis is the mu_z integrals\n");
+
+	double mu_x=0.0;
+	double mu_y=0.0;
+	double mu_z=0.0;
+	double N_x=0.0;
+	double N_y=0.0;	
+	double N_z=0.0;
+
+	for(int i=0; i<mux.n_rows; i++)
+	{
+		for(int j=0; j<mux.n_cols;j++)
+		{
+			mu_x+=2*den_I(i,j)*mux(i,j);
+			mu_y+=2*den_I(i,j)*muy(i,j);
+			mu_z+=2*den_I(i,j)*muz(i,j);
+		}
+	}
+	for(int i=0; i<n_atoms; i++)
+	{
+		N_x+=z_val(i)*geom(i,0);
+		N_y+=z_val(i)*geom(i,1);
+		N_z+=z_val(i)*geom(i,2);
+	}
+	cout.precision(15);
+	printf(" \n %s \t %8.5f \n %s \t %8.5f \n %s \t %8.5f \n","The dipole moment operators are: \n\n mu_x",mu_x+N_x,"mu_y",mu_y+N_y,"mu_z",mu_z+N_z);
+	printf("\n %s \t %8.5f\n", "The total dipole moment is :", mu_x+N_x+mu_y+N_y+mu_z+N_z);
 	
 }
 
+
+
+void geometry(arma::mat &geom, int &n_atoms, arma::vec &z_val)
+{
+	ifstream myreadfile1("geom.dat");
+	if(myreadfile1.is_open())
+		{
+			cout<<"\nReading the geometry file now\n"<<endl;
+			myreadfile1 >> n_atoms;
+			geom=arma::zeros(n_atoms,n_atoms);
+			z_val=arma::zeros(n_atoms);
+			for(int i=0; i<n_atoms; i++)
+			{
+				myreadfile1 >> z_val(i) >> geom(i,0) >> geom(i,1) >> 
+				geom(i,2);
+			}
+		}
+}
 
 
 int index1(int i, int j)
@@ -328,11 +414,5 @@ int index_call(int i, int j , int k, int l)
 
 	return ijkl;
 }
-
-
-
-
-
-
 
 
