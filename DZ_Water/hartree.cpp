@@ -30,8 +30,9 @@ int main()
 /******************************************************************/	
 //Reading the geometries and nuclear repulsion energy from the file 
 /******************************************************************/	
-
-
+	int occ;
+	cout<<"\nEnter the no. of occupied orbitals\n";
+	cin>>occ;
 	arma::mat geom;
 	arma::vec z_val;
 	int n_atoms=0;
@@ -182,7 +183,7 @@ int main()
 //The density matrix
 //Since only the first MO of water are occupied so the lowest five 
 //MO are taken into consideration and they are effectively squared.	
-	eig_AO.shed_cols(5,6);
+	eig_AO.shed_cols(occ,eig_AO.n_cols-1);
 	arma::mat den_I = eig_AO*eig_AO.t();	
 	real(den_I).print("\nThe initial guess density matrix\n");
 
@@ -237,7 +238,7 @@ int main()
 		arma:: mat eig_AO_store=S_sqrt*eigenvec_store;
 		coeff_car=eig_AO_store;
 		//eig_AO_store.print("\n");
-		eig_AO_store.shed_cols(5,6);
+		eig_AO_store.shed_cols(occ,eig_AO_store.n_cols-1);
 		arma:: mat density_store=eig_AO_store*eig_AO_store.t();
 		double energy1=0.0;
 		for(int i=0; i< H_c.n_rows; i++)
@@ -260,7 +261,7 @@ int main()
 		}
 		rms=pow(rms,0.5);
 		den_I=density_store;
-		printf("\n %d\t  %10.12f \t %10.12f \t %10.12f \t %10.12f \n ",ii,energy1,energy-enuc,d_ene,rms);	
+		printf("\n %d\t  %10.12f \t %10.12f \t %10.12f \t %10.12f \n ",ii,energy1,energy1+enuc,d_ene,rms);
 		//F_mv.print("\n");
 		//den_I.print("\nThe density matrix after quitting the loop\n");
 		if (abs(d_ene)<1e-12 && abs(rms_last-rms)< 1e-12 )
