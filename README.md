@@ -3,3 +3,5 @@ This is the third Crawdad Project on  The Hartree-Fock self-consistent field (SC
 To Compile:
 
 g++ -std=c++0x -g -o craw3 hartree.cpp -larmadillo -llapack -lblas
+
+Details: http://sirius.chem.vt.edu/wiki/doku.php?id=crawdad:programming:project3
