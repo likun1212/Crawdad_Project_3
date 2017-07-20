@@ -260,7 +260,7 @@ int main()
 		}
 		rms=pow(rms,0.5);
 		den_I=density_store;
-		printf("\n %d\t  %10.12f \t %10.12f \t %10.12f \t %10.12f \n ",ii,energy1,energy-enuc,d_ene,rms);	
+		printf("\n %d\t  %10.12f \t %10.12f \t %10.12f \t %10.12f \n ",ii,energy1,energy1+enuc,d_ene,rms);	
 		//F_mv.print("\n");
 		//den_I.print("\nThe density matrix after quitting the loop\n");
 		if (abs(d_ene)<1e-12 && abs(rms_last-rms)< 1e-12 )
