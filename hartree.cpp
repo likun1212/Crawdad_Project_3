@@ -247,7 +247,6 @@ int main()
 				energy1+=density_store(i,j)*(H_c(i,j)+F_mv(i,j));
 			}
 		}
-		double enery_last=energy1;
 		double d_ene=energy_last-energy1;
 		double rms=0.0;
 		double rms_last=0.0;
